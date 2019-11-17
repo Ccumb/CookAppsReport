@@ -98,3 +98,6 @@ MonoBehaviour:
   targetY: 0
   isMatched: 0
   mOtherDot: {fileID: 0}
+  isRowBomb: 0
+  rowArrow: {fileID: 4002376725915501274, guid: 8a6838ebdd8849a48ac16c887ff76923,
+    type: 3}

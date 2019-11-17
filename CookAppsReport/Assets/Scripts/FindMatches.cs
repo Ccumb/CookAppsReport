@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class FindMatches : MonoBehaviour
 {
@@ -60,6 +61,8 @@ public class FindMatches : MonoBehaviour
                         {
                             if (upDot.tag == currentDot.tag && downDot.tag == currentDot.tag)
                             {
+                                currentMatches.Union(IsRowBomb(upDot.GetComponent<Dot>(), currentDot.GetComponent<Dot>(), downDot.GetComponent<Dot>()));
+
                                 GetNearbyPieces(upDot, currentDot, downDot);
                             }
                         }
@@ -78,6 +81,8 @@ public class FindMatches : MonoBehaviour
                         {
                             if (leftUpDot.tag == currentDot.tag && rightDownDot.tag == currentDot.tag)
                             {
+                                currentMatches.Union(IsRowBomb(leftUpDot.GetComponent<Dot>(), currentDot.GetComponent<Dot>(), rightDownDot.GetComponent<Dot>()));
+
                                 GetNearbyPieces(leftUpDot, currentDot, rightDownDot);
                             }
                         }
@@ -96,6 +101,7 @@ public class FindMatches : MonoBehaviour
                         {
                             if (rightUpDot.tag == currentDot.tag && leftDownDot.tag == currentDot.tag)
                             {
+                                currentMatches.Union(IsRowBomb(rightUpDot.GetComponent<Dot>(), currentDot.GetComponent<Dot>(), leftDownDot.GetComponent<Dot>()));
                                 GetNearbyPieces(rightUpDot, currentDot, leftDownDot);
                             }
                         }
@@ -105,5 +111,76 @@ public class FindMatches : MonoBehaviour
         }
     }
 
-    
+    private List<GameObject> IsRowBomb(Dot dot1, Dot dot2, Dot dot3)
+    {
+        List<GameObject> currentDots = new List<GameObject>();
+
+        if (dot1.isRowBomb)
+        {
+            currentMatches.Union(GetRowPieces(dot1.column));
+        }
+
+        if (dot2.isRowBomb)
+        {
+            currentMatches.Union(GetRowPieces(dot2.column));
+        }
+
+        if (dot3.isRowBomb)
+        {
+            currentMatches.Union(GetRowPieces(dot3.column));
+        }
+
+        return currentDots;
+    }
+
+    List<GameObject> GetRowPieces(int row)
+    {
+        List<GameObject> dots = new List<GameObject>();
+
+        for (int i = 0; i < mBorad.dots[row].Count; i++)
+        {
+            if (mBorad.dots[row][i] != null)
+            {
+                Dot dot = mBorad.dots[row][i].GetComponent<Dot>();
+
+                dots.Add(mBorad.dots[row][i]);
+                dot.isMatched = true;
+            }
+        }
+
+        return dots;
+    }
+
+    public void CheckBombs()
+    {
+        if (mBorad.currentDot != null)
+        {
+            int column = mBorad.currentDot.column;
+            int row = mBorad.currentDot.row;
+
+            Debug.Log(column + ", " + row);
+
+            if (mBorad.currentDot.isMatched)
+            {
+                mBorad.currentDot.isMatched = false;
+
+                Debug.Log("Create Bomb");
+                mBorad.currentDot.MakeRowBomb();
+            }
+        }
+        else
+        {
+            if(currentMatches[0] != null)
+            {
+                int column = currentMatches[0].GetComponent<Dot>().column;
+                int row = currentMatches[0].GetComponent<Dot>().row;
+
+                if(currentMatches[0].GetComponent<Dot>().isMatched)
+                {
+                    currentMatches[0].GetComponent<Dot>().isMatched = false;
+                    currentMatches[0].GetComponent<Dot>().MakeRowBomb();
+                }
+            }
+        }
+    }
 }

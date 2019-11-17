@@ -23,31 +23,33 @@ public class Obstacle : MonoBehaviour
 
     public void CheckNearNodes()
     {
-        GameObject nodeObj = board.nodes[dot.column][dot.row];
-         
-        if (count <= 0)
+        if(dot != null)
         {
-            dot.isMatched = true;
-        }
+            GameObject nodeObj = board.nodes[dot.column][dot.row];
 
-        if (nodeObj != null)
-        {
-            Node node = nodeObj.GetComponent<Node>();
-
-            for (int i = 0; i < 6; i++)
+            if (count <= 0)
             {
-                if(node.nearNodes[i] != null)
+                board.obstacles.Dequeue();
+                dot.isMatched = true;
+            }
+
+            if (nodeObj != null)
+            {
+                Node node = nodeObj.GetComponent<Node>();
+
+                for (int i = 0; i < 6; i++)
                 {
-                    if(node.nearNodes[i].GetComponent<Node>().dot == null
-                        /*&& node.nearNodes[i].GetComponent<Node>().dot.tag != this.tag*/)
+                    if (node.nearNodes[i] != null)
                     {
-                        this.gameObject.GetComponent<SpriteRenderer>().color *= 0.6f;
-                        count--;
-                        break;
+                        if (node.nearNodes[i].GetComponent<Node>().dot == null)
+                        {
+                            this.gameObject.GetComponent<SpriteRenderer>().color *= 0.6f;
+                            count--;
+                            break;
+                        }
                     }
                 }
             }
         }
-        
     }
 }

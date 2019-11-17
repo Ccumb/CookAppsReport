@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-enum Dir
+public enum Dir
 {
     UP,
     RIGHT_UP,
@@ -34,36 +34,43 @@ public class Node : MonoBehaviour
     private bool touchOn;
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         mBoard = GameObject.FindObjectOfType<Board>();
         nearNodes = new GameObject[6];
+        
+    }
+    private void Start()
+    {
         SearchNearDots();
     }
 
     private void Update()
     {
-        touchOn = false;
-
-        if(Input.touchCount > 0)
+        if(mBoard.currentState == GameState.move && mBoard.currentState != GameState.clear)
         {
-            for(int i = 0; i < Input.touchCount; i++)
-            {
-                touch = Input.GetTouch(i);
+            touchOn = false;
 
-                if (touch.phase == TouchPhase.Began)
+            if (Input.touchCount > 0)
+            {
+                for (int i = 0; i < Input.touchCount; i++)
                 {
-                    if (mBoard.currentState == GameState.move)
+                    touch = Input.GetTouch(i);
+
+                    if (touch.phase == TouchPhase.Began)
                     {
-                        mFirstTouchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                        if (mBoard.currentState == GameState.move)
+                        {
+                            mFirstTouchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                        }
                     }
-                }
-                if(touch.phase == TouchPhase.Ended)
-                {
-                    if (mBoard.currentState == GameState.move)
+                    if (touch.phase == TouchPhase.Ended)
                     {
-                        mFinalTouchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-                        CalculateAngle();
+                        if (mBoard.currentState == GameState.move)
+                        {
+                            mFinalTouchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            CalculateAngle();
+                        }
                     }
                 }
             }
@@ -72,7 +79,7 @@ public class Node : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (mBoard.currentState == GameState.move)
+        if (mBoard.currentState == GameState.move && mBoard.currentState != GameState.clear)
         {
             mFirstTouchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         }
@@ -80,7 +87,7 @@ public class Node : MonoBehaviour
 
     private void OnMouseUp()
     {
-        if (mBoard.currentState == GameState.move)
+        if (mBoard.currentState == GameState.move && mBoard.currentState != GameState.clear)
         {
             mFinalTouchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             CalculateAngle();
@@ -240,8 +247,7 @@ public class Node : MonoBehaviour
             nearNodes[(int)dir].GetComponent<Node>().dot.GetComponent<Dot>().row = nearNodes[(int)dir].GetComponent<Node>().row;
     
             currentDir = dir;
-
-            //CheckMoveCo();
+            
             StartCoroutine("CheckMoveCo");
         }
         else
@@ -252,7 +258,7 @@ public class Node : MonoBehaviour
 
     public IEnumerator CheckMoveCo()
     {
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.5f);
         mBoard.DestroyMatches();
         GameObject other = nearNodes[(int)currentDir].GetComponent<Node>().dot;
 
@@ -265,16 +271,16 @@ public class Node : MonoBehaviour
             dot.GetComponent<Dot>().column = this.column;
             dot.GetComponent<Dot>().row = this.row;
 
-            nearNodes[(int)currentDir].GetComponent<Node>().dot.GetComponent<Dot>().column = nearNodes[(int)currentDir].GetComponent<Node>().column;
-            nearNodes[(int)currentDir].GetComponent<Node>().dot.GetComponent<Dot>().row = nearNodes[(int)currentDir].GetComponent<Node>().row;
-                
+            if(nearNodes[(int)currentDir].GetComponent<Node>().dot != null)
+            {
+                nearNodes[(int)currentDir].GetComponent<Node>().dot.GetComponent<Dot>().column = nearNodes[(int)currentDir].GetComponent<Node>().column;
+                nearNodes[(int)currentDir].GetComponent<Node>().dot.GetComponent<Dot>().row = nearNodes[(int)currentDir].GetComponent<Node>().row;
+            }
         }
         else
         {
             mBoard.DestroyMatches();
         }
-        //mBoard.DestroyMatches();
-        //mOtherDot = null;
     }
 
 

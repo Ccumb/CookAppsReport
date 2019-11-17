@@ -15,13 +15,17 @@ public class Dot : MonoBehaviour
 
     private FindMatches findMatches;
     private Vector2 mTmpPos;
-    public GameObject mOtherDot;
+
+    public bool isRowBomb;
+    public GameObject rowArrow;
 
     // Start is called before the first frame update
     void Start()
     {
         mBoard = GameObject.FindObjectOfType<Board>();
         findMatches = FindObjectOfType<FindMatches>();
+
+        isRowBomb = false;
 
     }
 
@@ -67,6 +71,16 @@ public class Dot : MonoBehaviour
         {
             mTmpPos = new Vector2(transform.position.x, targetY);
             transform.position = mTmpPos;
+        }
+    }
+
+    public void MakeRowBomb()
+    {
+        if(this.tag != "Obstacle")
+        {
+            isRowBomb = true;
+            GameObject arrow = Instantiate(rowArrow, transform.position, Quaternion.identity);
+            arrow.transform.parent = this.transform;
         }
     }
 

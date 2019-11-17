@@ -11,6 +11,8 @@ TagManager:
   - E
   - F
   - Obstacle
+  - G
+  - H
   layers:
   - Default
   - TransparentFX
