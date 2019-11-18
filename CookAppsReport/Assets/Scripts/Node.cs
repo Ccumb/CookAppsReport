@@ -29,6 +29,7 @@ public class Node : MonoBehaviour
     private Vector2 mFirstTouchPos;
     private Vector2 mFinalTouchPos;
     private Board mBoard;
+    private GameObject mOtherDot;
 
     private Touch touch;
     private bool touchOn;
@@ -94,6 +95,7 @@ public class Node : MonoBehaviour
         }
     }
 
+    // 6방향 주변 노드들 검색 및 저장
     public void SearchNearDots()
     {
         SearchUpDot();
@@ -104,6 +106,7 @@ public class Node : MonoBehaviour
         SearchRightDown();
     }
 
+    // 위
     void SearchUpDot()
     {
         int layerMask = 1 << LayerMask.NameToLayer("Node");
@@ -117,6 +120,8 @@ public class Node : MonoBehaviour
         }
     }
 
+
+    // 아래
     void SearchDownDot()
     {
         int layerMask = 1 << LayerMask.NameToLayer("Node");
@@ -130,6 +135,7 @@ public class Node : MonoBehaviour
         }
     }
 
+    // 우상
     void SearchRightUpDot()
     {
         int layerMask = 1 << LayerMask.NameToLayer("Node");
@@ -143,6 +149,7 @@ public class Node : MonoBehaviour
         }
     }
 
+    // 좌상
     void SearchLeftUpDot()
     {
         int layerMask = 1 << LayerMask.NameToLayer("Node");
@@ -156,6 +163,7 @@ public class Node : MonoBehaviour
         }
     }
 
+    // 우하
     void SearchRightDown()
     {
         int layerMask = 1 << LayerMask.NameToLayer("Node");
@@ -169,6 +177,7 @@ public class Node : MonoBehaviour
         }
     }
 
+    // 좌하
     void SearchLeftDown()
     {
         int layerMask = 1 << LayerMask.NameToLayer("Node");
@@ -247,7 +256,9 @@ public class Node : MonoBehaviour
             nearNodes[(int)dir].GetComponent<Node>().dot.GetComponent<Dot>().row = nearNodes[(int)dir].GetComponent<Node>().row;
     
             currentDir = dir;
-            
+            mOtherDot = nearNodes[(int)dir].GetComponent<Node>().dot;
+
+
             StartCoroutine("CheckMoveCo");
         }
         else
@@ -256,13 +267,14 @@ public class Node : MonoBehaviour
         }
     }
 
+    // 옮긴 후 매치되지 않으면 다시 제자리로
     public IEnumerator CheckMoveCo()
     {
         yield return new WaitForSeconds(0.5f);
         mBoard.DestroyMatches();
         GameObject other = nearNodes[(int)currentDir].GetComponent<Node>().dot;
-
-        if (other != null)
+        
+        if (other != null && mOtherDot == other)
         {
             GameObject tmp = dot;
             dot = nearNodes[(int)currentDir].GetComponent<Node>().dot;
@@ -279,10 +291,8 @@ public class Node : MonoBehaviour
         }
         else
         {
-            mBoard.DestroyMatches();
+            //mBoard.DestroyMatches();
         }
     }
-
-
 }
 

@@ -35,6 +35,7 @@ public class FindMatches : MonoBehaviour
         AddToListAndMatch(dot3);
     }
 
+    // 모든 매치된 것들 찾기
     private IEnumerator FindAllMatchesCo()
     {
         yield return new WaitForSeconds(0.2f);
@@ -111,6 +112,7 @@ public class FindMatches : MonoBehaviour
         }
     }
 
+    // 폭탄인지 확인 후 터트리기
     private List<GameObject> IsRowBomb(Dot dot1, Dot dot2, Dot dot3)
     {
         List<GameObject> currentDots = new List<GameObject>();
@@ -133,6 +135,7 @@ public class FindMatches : MonoBehaviour
         return currentDots;
     }
 
+    // 상하 방향으로 터트리기
     List<GameObject> GetRowPieces(int row)
     {
         List<GameObject> dots = new List<GameObject>();
@@ -151,6 +154,7 @@ public class FindMatches : MonoBehaviour
         return dots;
     }
 
+    // 폭탄 만들기
     public void CheckBombs()
     {
         if (mBorad.currentDot != null)
@@ -163,8 +167,7 @@ public class FindMatches : MonoBehaviour
             if (mBorad.currentDot.isMatched)
             {
                 mBorad.currentDot.isMatched = false;
-
-                Debug.Log("Create Bomb");
+                
                 mBorad.currentDot.MakeRowBomb();
             }
         }

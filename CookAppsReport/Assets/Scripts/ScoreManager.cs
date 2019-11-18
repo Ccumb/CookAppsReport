@@ -6,7 +6,10 @@ using UnityEngine.UI;
 public class ScoreManager : MonoBehaviour
 {
     public Text scoreText;
+    public Text obstacleCountText;
+
     public int score;
+    public int obstacleCount;
 
     // Start is called before the first frame update
     void Start()
@@ -18,10 +21,16 @@ public class ScoreManager : MonoBehaviour
     void Update()
     {
         scoreText.text = score.ToString();
+        obstacleCountText.text = obstacleCount.ToString();
     }
 
     public void IncreaseScore(int amount)
     {
         score += amount;
+    }
+
+    public void UpdateObstacleCount(int amount)
+    {
+        obstacleCount = amount;
     }
 }

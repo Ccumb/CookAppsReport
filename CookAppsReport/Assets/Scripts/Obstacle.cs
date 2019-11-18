@@ -13,6 +13,7 @@ public class Obstacle : MonoBehaviour
     {
         dot = this.gameObject.GetComponent<Dot>();
         board = FindObjectOfType<Board>();
+        CheckNearNodes();
     }
 
     // Update is called once per frame
@@ -21,6 +22,7 @@ public class Obstacle : MonoBehaviour
         //CheckNearNodes();
     }
 
+    // 주변 노드들 탐지
     public void CheckNearNodes()
     {
         if(dot != null)
@@ -41,7 +43,8 @@ public class Obstacle : MonoBehaviour
                 {
                     if (node.nearNodes[i] != null)
                     {
-                        if (node.nearNodes[i].GetComponent<Node>().dot == null)
+                        // 주변에서 블럭이 터지면
+                        if (node.nearNodes[i].GetComponent<Node>().dot == null || node.nearNodes[i].GetComponent<Node>().dot.GetComponent<Dot>().isMatched == true)
                         {
                             this.gameObject.GetComponent<SpriteRenderer>().color *= 0.6f;
                             count--;

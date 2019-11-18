@@ -15,22 +15,26 @@ public class Board : MonoBehaviour
     public GameState currentState = GameState.move;
 
     public GameObject tilePrefab;
-    public float offset;
-
-    public int minHeight;      
-    public int maxHeight;       
-    public int totalWidth;
-    public float refillDelay = 0.3f;
-
     public GameObject[] dotPrefabs;
     public GameObject nodePrefab;
     public GameObject obstaclePrefab;
     public GameObject endPage;
+    public GameObject goalPage;
 
+    public float offset;
+
+    // 제일 적은 열의 갯수
+    public int minHeight;
+    // 제일 많은 열의 갯수
+    public int maxHeight;
+    // 총 행의 갯수
+    public int totalWidth;
+    
     public List<List<GameObject>> dots = new List<List<GameObject>>();
     public List<List<GameObject>> nodes = new List<List<GameObject>>();
     public List<List<Vector2>> tiles = new List<List<Vector2>>();
 
+    // 장애물 위치, 실제 좌표 값이 아닌 인덱스 번호로.
     public List<Vector2> obstaclePos = new List<Vector2>();
 
     public Dot currentDot;
@@ -39,8 +43,6 @@ public class Board : MonoBehaviour
     private ScoreManager scoreManager;
     public int basePieceValue = 20;
     private int streakValue = 1;
-
-    private Queue<Node> nullNodes;
     private Queue<GameObject> refillDots;
 
     public Queue<GameObject> obstacles = new Queue<GameObject>();
@@ -48,21 +50,31 @@ public class Board : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        StartCoroutine("DisplayGoalPage");
+
         mFindMatches = FindObjectOfType<FindMatches>();
         scoreManager = FindObjectOfType<ScoreManager>();
-        nullNodes = new Queue<Node>();
         refillDots = new Queue<GameObject>();
         endPage.active = false;
 
         SetUp();
+    }
+
+    IEnumerator DisplayGoalPage()
+    {
+        goalPage.active = true;
+        currentState = GameState.wait;
+
+        yield return new WaitForSeconds(3.0f);
+
+        goalPage.active = false;
+        currentState = GameState.move;
 
         mFindMatches.FindAllMatches();
-
         DestroyMatches();
-
     }
-    
 
+    // Dot 세팅
     void SetUp()
     {
         Vector2 tilePos = new Vector2(0, 0);
@@ -74,14 +86,15 @@ public class Board : MonoBehaviour
         {
             dots.Add(new List<GameObject>());
 
-            if(currentHeight <= maxHeight)
+            if (currentHeight <= maxHeight)
             {
                 tilePos = new Vector2(i, -(float)0.5 * i);
 
                 for (int j = 0; j < currentHeight; j++)
                 {
                     tilePos.y += 1;
-                    
+
+                    // Dot 겹치지 않게 하는 부분
                     int maxIteration = 0;
                     int dotToUse = Random.Range(0, dotPrefabs.Length);
                     while (MatchesAt(i, j, dotPrefabs[dotToUse]) && maxIteration < 100)
@@ -107,7 +120,7 @@ public class Board : MonoBehaviour
             {
                 tilePos = new Vector2(i, -(float)0.5 * ((totalWidth - 1) - i));
 
-                for (int j = 0; j < maxHeight - (currentHeight - maxHeight) ; j++)
+                for (int j = 0; j < maxHeight - (currentHeight - maxHeight); j++)
                 {
                     tilePos.y += 1;
 
@@ -139,6 +152,7 @@ public class Board : MonoBehaviour
         SetUp_Obstacle();
     }
 
+    // Tile 및 Node 세팅
     void SetUp_TileAndNode()
     {
         Vector2 tilePos = new Vector2(0, 0);
@@ -166,7 +180,7 @@ public class Board : MonoBehaviour
 
                     tiles[i].Add(tilePos);
                     nodes[i].Add(node);
-                    
+
                     node.GetComponent<Node>().row = j;
                     node.GetComponent<Node>().column = i;
                 }
@@ -188,19 +202,20 @@ public class Board : MonoBehaviour
 
                     tiles[i].Add(tilePos);
                     nodes[i].Add(node);
-                    
+
                     node.GetComponent<Node>().row = j;
                     node.GetComponent<Node>().column = i;
-                    
+
                 }
             }
             currentHeight++;
         }
     }
 
+    // 장애물 세팅
     void SetUp_Obstacle()
     {
-        for(int i = 0; i < obstaclePos.Count; i++)
+        for (int i = 0; i < obstaclePos.Count; i++)
         {
             Vector2 ObstaclePos = obstaclePos[i];
 
@@ -215,9 +230,11 @@ public class Board : MonoBehaviour
 
             obstacles.Enqueue(obstacle);
         }
-    }
-    
 
+        scoreManager.obstacleCount = obstacles.Count;
+    }
+
+    // 현재 터져야 할 블럭이 있는가?
     bool MatchesOnBoard()
     {
         for (int i = 0; i < dots.Count; i++)
@@ -236,11 +253,12 @@ public class Board : MonoBehaviour
         return false;
     }
 
+    // 해당 인덱스의 블럭 실질적으로 제거
     void DestroyMatchesAt(int column, int row)
     {
         if (dots[column][row].GetComponent<Dot>().isMatched)
         {
-            if(dots[column][row].tag != "Obstacle")
+            if (dots[column][row].tag != "Obstacle")
             {
                 scoreManager.IncreaseScore(basePieceValue * streakValue);
 
@@ -252,32 +270,26 @@ public class Board : MonoBehaviour
             }
             nodes[column][row].GetComponent<Node>().dot = null;
             Destroy(dots[column][row]);
-            
-            nullNodes.Enqueue(nodes[column][row].GetComponent<Node>());
             dots[column][row] = null;
         }
     }
 
-    void RefillBoard()
-    {
-        StartCoroutine("DropDot_reFill");
-    }
-
+    // 각 행의 제일 위칸 블럭 검색 -> 양 옆으로 내려주기
     void CheckTopDots()
     {
         currentState = GameState.fill;
         for (int i = 0; i < nodes.Count; i++)
         {
-            for(int j = nodes[i].Count - 1; j >= 0; j--)
+            for (int j = nodes[i].Count - 1; j >= 0; j--)
             {
-                if(nodes[i][j].GetComponent<Node>().dot != null)
+                if (nodes[i][j].GetComponent<Node>().dot != null)
                 {
                     if (nodes[i][j].GetComponent<Node>().nearNodes[(int)Dir.RIGHT_DOWN] != null
                         && nodes[i][j].GetComponent<Node>().nearNodes[(int)Dir.LEFT_DOWN] != null)
                     {
                         int rand = Random.Range(0, 1);
 
-                        if(rand == 1)
+                        if (rand == 1)
                         {
                             Node sideNode = nodes[i][j].GetComponent<Node>().nearNodes[(int)Dir.RIGHT_DOWN].GetComponent<Node>();
 
@@ -328,7 +340,7 @@ public class Board : MonoBehaviour
                         }
                     }
 
-                    if(nodes[i][j].GetComponent<Node>().nearNodes[(int)Dir.RIGHT_DOWN] != null)
+                    if (nodes[i][j].GetComponent<Node>().nearNodes[(int)Dir.RIGHT_DOWN] != null)
                     {
                         Node sideNode = nodes[i][j].GetComponent<Node>().nearNodes[(int)Dir.RIGHT_DOWN].GetComponent<Node>();
 
@@ -350,10 +362,11 @@ public class Board : MonoBehaviour
         currentState = GameState.move;
     }
 
+    // 맨 위칸이 비면 블럭 생성
     IEnumerator DropDot_reFill()
     {
         Node topNode = nodes[(int)totalWidth / 2][(int)maxHeight - 1].GetComponent<Node>();
-        
+
         if (topNode.dot == null && dots[topNode.column][topNode.row] == null)
         {
             int dotToUse = Random.Range(0, dotPrefabs.Length);
@@ -367,31 +380,41 @@ public class Board : MonoBehaviour
             dots[topNode.column][topNode.row] = topNode.dot;
             topNode.dot.active = true;
         }
-        
+
         yield return new WaitForSeconds(0.5f);
         StartCoroutine("DropDotsCo");
         CheckTopDots();
     }
 
+    // 블럭 리필 후 처리들
     IEnumerator FillBoardCo()
     {
-        RefillBoard();
+        StartCoroutine("DropDot_reFill");
         yield return new WaitForSeconds(0.5f);
 
-        while(MatchesOnBoard())
+        while (MatchesOnBoard())
         {
             streakValue++;
             yield return new WaitForSeconds(0.5f);
-            DestroyMatches();
+
+            Node topNode = nodes[(int)totalWidth / 2][(int)maxHeight - 1].GetComponent<Node>();
+
+            if (topNode.dot != null && dots[topNode.column][topNode.row] != null)
+            {
+                DestroyMatches();
+            }
 
         }
         mFindMatches.currentMatches.Clear();
         currentDot = null;
 
         CheckTopDots();
-        
-        if(IsDeadLocked())
+
+        // 데드락 수정중. 이후 블럭 섞기 구현해야.
+        if (IsDeadLocked())
         {
+            Debug.Log("DeadLocked!");
+            //StartCoroutine("ShakeBoard");
         }
 
         yield return new WaitForSeconds(0.5f);
@@ -399,6 +422,7 @@ public class Board : MonoBehaviour
         streakValue = 1;
     }
 
+    // 블럭을 아래칸까지 내려주기
     IEnumerator DropDotsCo()
     {
         for (int i = 0; i < nodes.Count; i++)
@@ -420,7 +444,7 @@ public class Board : MonoBehaviour
 
                             nodes[i][dot.GetComponent<Dot>().row].GetComponent<Node>().dot = dot;
                             nodes[i][j].GetComponent<Node>().dot = null;
-                            
+
                             dots[i][j] = null;
                         }
                     }
@@ -428,16 +452,17 @@ public class Board : MonoBehaviour
             }
         }
 
-        nullNodes.Clear();
+        CheckClear();
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.3f);
         currentState = GameState.move;
         StartCoroutine("FillBoardCo");
     }
 
+    // 터져야할 블럭 터트리기
     public void DestroyMatches()
     {
-        if(currentState != GameState.fill)
+        if (currentState != GameState.fill)
         {
             for (int i = 0; i < dots.Count; i++)
             {
@@ -445,7 +470,7 @@ public class Board : MonoBehaviour
                 {
                     if (dots[i][j] != null)
                     {
-                        if(dots[i][j].tag == "Obstacle")
+                        if (dots[i][j].tag == "Obstacle")
                         {
                             dots[i][j].GetComponent<Obstacle>().CheckNearNodes();
                             DestroyMatchesAt(i, j);
@@ -457,13 +482,15 @@ public class Board : MonoBehaviour
                     }
                 }
             }
+            scoreManager.UpdateObstacleCount(obstacles.Count);
             mFindMatches.currentMatches.Clear();
         }
 
         StartCoroutine("DropDotsCo");
-        StartCoroutine("CheckClear");
+        CheckClear();
     }
-    
+
+    // 해당 블럭이 터질 수 있는 환경인가?
     public bool CheckNearArea(int column, int row)
     {
         GameObject nodeObj = nodes[column][row];
@@ -472,12 +499,12 @@ public class Board : MonoBehaviour
 
         Queue<GameObject> check_nodes = new Queue<GameObject>();
 
-        if(nodeObj != null)
+        if (nodeObj != null)
         {
             Node node = nodeObj.GetComponent<Node>();
             GameObject dot = node.dot;
 
-            if(dot != null)
+            if (dot != null)
             {
                 for (int i = 0; i < 6; i++)
                 {
@@ -490,41 +517,41 @@ public class Board : MonoBehaviour
                                 otherDotTags.Add(node.nearNodes[i].GetComponent<Node>().dot.tag);
                             }
 
-                            if (node.nearNodes[i].GetComponent<Node>().dot.tag == dot.tag && dot.tag != "Obstacle")
+                            if (node.nearNodes[i].GetComponent<Node>().dot.tag == dot.tag)
                             {
                                 check_nodes.Enqueue(node.nearNodes[i]);
-                                
+
                             }
                         }
                     }
                 }
 
                 // 주변에 나와 다르지만, 색이 같은 블럭들이 있나 체크
-                if(CheckNearTag(node.column, node.row))
+                if (CheckNearTag(node.column, node.row))
                 {
                     return true;
                 }
 
                 // 나와 색이 같은 블럭의 주변에 나 이외에 색이 같은 블럭들이 있나 체크
-                for(int i = 0; i < check_nodes.Count; i++)
+                for (int i = 0; i < check_nodes.Count; i++)
                 {
                     GameObject checkNode = check_nodes.Dequeue();
                     Node checkNode_node = checkNode.GetComponent<Node>();
 
-                    for(int j = 0; j < 6; j++)
+                    for (int j = 0; j < 6; j++)
                     {
-                        if(checkNode_node.nearNodes[i] != null)
+                        if (checkNode_node.nearNodes[i] != null)
                         {
-                            if(checkNode_node.nearNodes[i].GetComponent<Node>().dot != null)
+                            if (checkNode_node.nearNodes[i].GetComponent<Node>().dot != null)
                             {
-                                if(node.column != checkNode_node.nearNodes[i].GetComponent<Node>().column 
+                                if (node.column != checkNode_node.nearNodes[i].GetComponent<Node>().column
                                     && node.row != checkNode_node.nearNodes[i].GetComponent<Node>().row)
                                 {
-                                    for(int k = 0; k < 6; k++)
+                                    for (int k = 0; k < 6; k++)
                                     {
                                         if (node.GetComponent<Node>().nearNodes[k] != null)
                                         {
-                                            if(node.GetComponent<Node>().nearNodes[k] != checkNode_node.nearNodes[i])
+                                            if (node.GetComponent<Node>().nearNodes[k] != checkNode_node.nearNodes[i])
                                             {
                                                 if (checkNode_node.dot.tag == checkNode_node.nearNodes[i].GetComponent<Node>().dot.tag)
                                                 {
@@ -541,16 +568,16 @@ public class Board : MonoBehaviour
                 }
 
                 // 나와 색이 다른 블럭의 주변에 나와 색이 같은 블럭들이 있나 체크
-                if(CheckNearNode_NotSameTag(node.column, node.row))
+                if (CheckNearNode_NotSameTag(node.column, node.row))
                 {
                     return true;
                 }
             }
-            
+
         }
         return false;
     }
-
+    
     bool CheckNearTag(int column, int row)
     {
         GameObject nodeObj = nodes[column][row];
@@ -571,15 +598,15 @@ public class Board : MonoBehaviour
 
                     if (dot != null && otherDot != null)
                     {
-                        if(dot.tag == otherDot.tag && dot.tag != "Obstaacle")
+                        if (dot.tag == otherDot.tag && dot.tag != "Obstaacle")
                         {
                             int nCount = 0;
 
-                            for(int j = 0; j < 6; j++)
+                            for (int j = 0; j < 6; j++)
                             {
                                 GameObject findSame = node.nearNodes[j];
 
-                                if(findSame != null)
+                                if (findSame != null)
                                 {
                                     if (findSame.GetComponent<Node>().dot != null)
                                     {
@@ -606,7 +633,7 @@ public class Board : MonoBehaviour
     {
         GameObject nodeObj = nodes[column][row];
 
-        if(nodeObj != null)
+        if (nodeObj != null)
         {
             Node node = nodeObj.GetComponent<Node>();
 
@@ -614,13 +641,13 @@ public class Board : MonoBehaviour
             {
                 GameObject nearNodeObj = node.nearNodes[i];
 
-                if(nearNodeObj != null)
+                if (nearNodeObj != null)
                 {
                     Node nearNode = nearNodeObj.GetComponent<Node>();
 
-                    if(node.dot != null && nearNode.dot != null)
+                    if (node.dot != null && nearNode.dot != null)
                     {
-                        if (node.dot.tag != nearNode.tag && node.dot.tag != "Obstacle")
+                        if (node.dot.tag != nearNode.tag)
                         {
                             if (nearNode.nearNodes[i] != null)
                             {
@@ -629,10 +656,28 @@ public class Board : MonoBehaviour
                                     if (nearNode.nearNodes[i].GetComponent<Node>().dot != null
                                         && nearNode.nearNodes[i].GetComponent<Node>().nearNodes[i].GetComponent<Node>().dot != null)
                                     {
-                                        if (nearNode.nearNodes[i].GetComponent<Node>().dot.tag == node.tag
-                                        && nearNode.nearNodes[i].GetComponent<Node>().nearNodes[i].GetComponent<Node>().dot.tag == nearNode.nearNodes[i].GetComponent<Node>().dot.tag)
+                                        if (nearNode.nearNodes[i].GetComponent<Node>().nearNodes[i].GetComponent<Node>().dot.tag == nearNode.nearNodes[i].GetComponent<Node>().dot.tag
+                                            && nearNode.nearNodes[i].GetComponent<Node>().dot.tag != "Obstacle")
                                         {
-                                            return true;
+                                            int nCount = 0;
+
+                                            for (int j = 0; j < 6; j++)
+                                            {
+                                                GameObject tmp = node.nearNodes[j];
+
+                                                if (tmp != null && tmp.GetComponent<Node>().dot != null)
+                                                {
+                                                    if(tmp.GetComponent<Node>().dot.tag == nearNode.nearNodes[i].GetComponent<Node>().dot.tag)
+                                                    {
+                                                        nCount++;
+                                                    }
+                                                }
+                                            }
+                                            
+                                            if(nCount > 1)
+                                            {
+                                                return true;
+                                            }
                                         }
                                     }
                                 }
@@ -646,68 +691,145 @@ public class Board : MonoBehaviour
         return false;
     }
 
+
+    // 데드락?
     bool IsDeadLocked()
     {
-        for (int i = 0; i < dots.Count; i++)
+        Node topNode = nodes[(int)totalWidth / 2][(int)maxHeight - 1].GetComponent<Node>();
+        int nCount = 0;
+
+        if (topNode.dot != null && dots[topNode.column][topNode.row] != null)
         {
-            for (int j = 0; j < dots[i].Count; j++)
+            for (int i = 0; i < dots.Count; i++)
             {
-                if (dots[i][j] != null)
+                for (int j = 0; j < dots[i].Count; j++)
                 {
-                    if (CheckNearArea(i, j))
+                    if (dots[i][j] != null)
                     {
-                        return false;
+                        if (CheckNearArea(i, j))
+                        {
+                            nCount++;
+
+                            if(nCount > 0)
+                            {
+                                return false;
+                            }
+                        }
                     }
-                    //CheckNearArea(i, j);
                 }
             }
+
+            // 터질 수 있는 것들이 하나도 없으면 true
+            if(nCount <= 0)
+            {
+                return true;
+            }
         }
-        return true;
+        return false;
     }
 
+    // 블럭 초기 생성시 바로 터지지 않게 미리 검사 ( 아직 같은 열만 검사 )
     bool MatchesAt(int column, int row, GameObject piece)
     {
-        if(row > 1)
+        if (row > 1)
         {
-            if(dots[column][row - 1] != null && dots[column][row - 2] != null)
+            if (dots[column][row - 1] != null && dots[column][row - 2] != null)
             {
-                if(dots[column][row - 1].tag == piece.tag && dots[column][row - 2].tag == piece.tag)
+                if (dots[column][row - 1].tag == piece.tag && dots[column][row - 2].tag == piece.tag)
                 {
                     return true;
                 }
             }
         }
-
         return false;
     }
 
-    IEnumerator CheckClear()
+    // 클리어
+    void  CheckClear()
     {
-        yield return new WaitForSeconds(0.3f);
-
-        if(obstacles.Count <= 0)
+        // 장애물이 다 사라지면 클리어
+        if (obstacles.Count <= 0)
         {
             endPage.active = true;
-            //currentState = GameState.clear;
-
-            yield return new WaitForSeconds(0.5f);
             StopAllCoroutines();
             currentState = GameState.clear;
         }
     }
 
+    // 폭탄을 만들 수 있으면 만들기
     void CheckToMakeBombs()
     {
+        // 터진 블럭의 갯수가 4개면
         if (mFindMatches.currentMatches.Count == 4)
         {
-            Debug.Log("Match 4");
             mFindMatches.CheckBombs();
         }
     }
 
-        // Update is called once per frame
-        void Update()
+    IEnumerator ShakeBoard()
     {
-        
+        yield return new WaitForSeconds(0.5f);
+        List<GameObject> newDots = new List<GameObject>();
+
+        Node topNode = nodes[(int)totalWidth / 2][(int)maxHeight - 1].GetComponent<Node>();
+        int nCount = 0;
+
+        if (topNode.dot != null && dots[topNode.column][topNode.row] != null)
+        {
+
+            for (int i = 0; i < dots.Count; i++)
+            {
+                for (int j = 0; j < dots[i].Count; j++)
+                {
+                    if (dots[i][j] != null && dots[i][j].tag != "Obstacle")
+                    {
+                        newDots.Add(dots[i][j]);
+                    }
+                }
+            }
+
+            yield return new WaitForSeconds(0.5f);
+
+            for (int i = 0; i < dots.Count; i++)
+            {
+                for (int j = 0; j < dots[i].Count; j++)
+                {
+                    int dotToUse = Random.Range(0, newDots.Count);
+
+                    int maxIteration = 0;
+
+                    while (MatchesAt(i, j, newDots[dotToUse]) && maxIteration < 100)
+                    {
+                        dotToUse = Random.Range(0, newDots.Count);
+                        maxIteration++;
+                    }
+                    maxIteration = 0;
+
+                    Dot dot = newDots[dotToUse].GetComponent<Dot>();
+
+                    if (dots[i][j].tag != "Obstacle")
+                    {
+                        dot.column = i;
+                        dot.row = j;
+                        dots[i][j] = newDots[dotToUse];
+                        nodes[i][j].GetComponent<Node>().dot = newDots[dotToUse];
+                        newDots.Remove(newDots[dotToUse]);
+                    }
+                }
+            }
+        }
+
+        if(IsDeadLocked())
+        {
+            ShakeBoard();
+        }
+    }
+                
+
+    // Update is called once per frame
+    void Update()
+    {
+
     }
 }
+
