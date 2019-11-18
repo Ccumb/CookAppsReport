@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
+[DisallowMultipleComponent]
 public class Dot : MonoBehaviour
 {
     public int column = 0;

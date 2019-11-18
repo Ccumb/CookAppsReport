@@ -10,6 +10,7 @@ public enum GameState
     clear
 }
 
+[DisallowMultipleComponent]
 public class Board : MonoBehaviour
 {
     public GameState currentState = GameState.move;

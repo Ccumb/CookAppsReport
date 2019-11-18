@@ -12,6 +12,7 @@ public enum Dir
     LEFT_UP
 }
 
+[DisallowMultipleComponent]
 public class Node : MonoBehaviour
 {
     public GameObject dot;

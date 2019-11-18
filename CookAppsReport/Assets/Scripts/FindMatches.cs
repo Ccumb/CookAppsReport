@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+[DisallowMultipleComponent]
 public class FindMatches : MonoBehaviour
 {
     private Board mBorad;
