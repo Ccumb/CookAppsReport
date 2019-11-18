@@ -254,6 +254,24 @@ public class Board : MonoBehaviour
         return false;
     }
 
+    bool IsNullNode()
+    {
+        for(int i = 0; i < nodes.Count; i++)
+        {
+            for(int j = 0; j < nodes[i].Count; j++)
+            {
+                if(nodes[i][j] != null)
+                {
+                    if(nodes[i][j].GetComponent<Node>().dot == null)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     // 해당 인덱스의 블럭 실질적으로 제거
     void DestroyMatchesAt(int column, int row)
     {
@@ -398,12 +416,7 @@ public class Board : MonoBehaviour
             streakValue++;
             yield return new WaitForSeconds(0.5f);
 
-            Node topNode = nodes[(int)totalWidth / 2][(int)maxHeight - 1].GetComponent<Node>();
-
-            if (topNode.dot != null && dots[topNode.column][topNode.row] != null)
-            {
-                DestroyMatches();
-            }
+            DestroyMatches();
 
         }
         mFindMatches.currentMatches.Clear();
@@ -463,7 +476,9 @@ public class Board : MonoBehaviour
     // 터져야할 블럭 터트리기
     public void DestroyMatches()
     {
-        if (currentState != GameState.fill)
+        Node topNode = nodes[(int)totalWidth / 2][(int)maxHeight - 1].GetComponent<Node>();
+
+        if (!IsNullNode())
         {
             for (int i = 0; i < dots.Count; i++)
             {
