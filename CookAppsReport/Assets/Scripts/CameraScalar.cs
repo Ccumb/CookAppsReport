@@ -5,7 +5,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class CameraScalar : MonoBehaviour
 {
-    private Board mBoard;
+    private Hexa.Board mBoard;
     public float cameraOffset = -20;
     public float aspectRatio = 0.625f;
     public float padding = 2;
@@ -14,7 +14,7 @@ public class CameraScalar : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        mBoard = FindObjectOfType<Board>();
+        mBoard = FindObjectOfType<Hexa.Board>();
 
         if (mBoard != null)
         {

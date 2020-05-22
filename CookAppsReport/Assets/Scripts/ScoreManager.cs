@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
+// 점수. 화면에 보여주는 것 담당 UI
 public class ScoreManager : MonoBehaviour
 {
     public Text scoreText;
